@@ -1,14 +1,20 @@
 
+const int buttonFlashPin = 2;
+int buttonFlashState = 0;
+int buttonFlashLastState = 0;
 
-const int buttonTempoPin = 2;
+const int buttonTempoPin = 3;
 int buttonTempoState = 0;
 int buttonTempoLastState = 0;
 
-const int buttonModePin = 3;
+const int buttonModePin = 4;
 int buttonModeState = 0;
 int buttonModeLastState = 0;
 
-const int relayPin = 4;
+
+const int relayPin = 5;
+
+const int ledPin = 13;
 
 unsigned long tapTimeFirst;
 unsigned long tapTimePrevious;
@@ -28,20 +34,34 @@ int currentMode = 0;
 // 3 = Strobe short
 
 void setup(){
+  pinMode(buttonFlashPin, INPUT);
   pinMode(buttonTempoPin, INPUT);
   pinMode(buttonModePin, INPUT);
   pinMode(relayPin, OUTPUT);
+  pinMode(ledPin, OUTPUT);
   
   Serial.begin(9600);
 }
 
 void loop(){
   
+  buttonFlashState = digitalRead(buttonFlashPin);
   buttonTempoState = digitalRead(buttonTempoPin);
   buttonModeState = digitalRead(buttonModePin);
   
-  if( buttonModeState != buttonModeLastState ){
+  if( buttonFlashState != buttonFlashLastState && currentMode == 0 ){
     
+    if( buttonFlashState == HIGH ){
+      switchRelay(HIGH);
+      delay(100);
+      switchRelay(LOW);
+    }
+    
+    buttonFlashLastState = buttonFlashState;
+  }
+  
+  
+  if( buttonModeState != buttonModeLastState ){
     
     if( buttonModeState == HIGH ){
       
@@ -76,11 +96,11 @@ void loop(){
 
 void switchedMode(){
   if( currentMode == 0 ){
-    digitalWrite(relayPin, LOW);
+    switchRelay(LOW);
   }
   
   if( currentMode == 1 ){
-    digitalWrite(relayPin, HIGH);
+    switchRelay(HIGH);
   }
 }
 
@@ -101,15 +121,20 @@ void strobe(){
 
 void doStrobe(){
   if( lastStrobeState != strobeState ){
-    digitalWrite(relayPin, strobeState);
+    switchRelay(strobeState);
+    
     lastStrobeState = strobeState;
     
     if( strobeState == HIGH && currentMode == 3 ){
       delay(100);
-      digitalWrite(relayPin, LOW);
-      Serial.println("flash");
+      switchRelay(LOW);
     }
   }
+}
+
+void switchRelay(int state){
+  digitalWrite(relayPin, state);
+  digitalWrite(ledPin, state);
 }
 
 void tappedTempo(){
